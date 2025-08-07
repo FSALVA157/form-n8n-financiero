@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asesor Financiero Automotriz</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header .emoji {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .required {
+            color: #e74c3c;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .currency-group {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e1e8ed;
+            transition: all 0.3s ease;
+        }
+        
+        .checkbox-group:hover {
+            border-color: #667eea;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e1e8ed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .step.completed {
+            background: #27ae60;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="emoji">🚗💰</span>
+            <h1>Asesor Financiero</h1>
+        </div>
+        
+        <div class="step-indicator">
+            <div class="step active">1</div>
+            <div class="step">2</div>
+            <div class="step">3</div>
+        </div>
+        
+        <div class="success" id="successMessage">
+            ✅ Datos enviados correctamente. Procesando tu consulta...
+        </div>
+        
+        <div class="loading" id="loadingDiv">
+            <div class="spinner"></div>
+            <p>Enviando datos...</p>
+        </div>
+        
+        <form id="financialForm">
+            <!-- Paso 1: Información del Vehículo -->
+            <div class="step-content" id="step1">
+                <div class="form-group">
+                    <label for="modelo">🚙 Modelo de auto de interés <span class="required">*</span></label>
+                    <input type="text" id="modelo" name="modelo" placeholder="Ej: Toyota Corolla, Honda Civic" required>
+                    <div class="error" id="modeloError">Por favor ingresa el modelo del vehículo</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="plazo">⏱️ Plazo deseado <span class="required">*</span></label>
+                    <select id="plazo" name="plazo" required>
+                        <option value="">Seleccionar plazo</option>
+                        <option value="12">12 meses</option>
+                        <option value="24">24 meses</option>
+                        <option value="36">36 meses</option>
+                        <option value="48">48 meses</option>
+                    </select>
+                    <div class="error" id="plazoError">Por favor selecciona un plazo</div>
+                </div>
+            </div>
+            
+            <!-- Paso 2: Información Financiera -->
+            <div class="step-content" id="step2" style="display: none;">
+                <div class="form-group">
+                    <label>💳 Cuota mensual máxima <span class="required">*</span></label>
+                    <div class="currency-group">
+                        <select id="monedaCuota" name="monedaCuota" required>
+                            <option value="ARS">ARS $</option>
+                            <option value="USD">USD $</option>
+                        </select>
+                        <input type="number" id="cuotaMaxima" name="cuotaMaxima" placeholder="100,000" required>
+                    </div>
+                    <div class="error" id="cuotaError">Ingresa el monto máximo de cuota</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>💵 Dinero disponible en efectivo <span class="required">*</span></label>
+                    <div class="currency-group">
+                        <select id="monedaEfectivo" name="monedaEfectivo" required>
+                            <option value="ARS">ARS $</option>
+                            <option value="USD">USD $</option>
+                        </select>
+                        <input type="number" id="dineroEfectivo" name="dineroEfectivo" placeholder="500,000" required>
+                    </div>
+                    <div class="error" id="efectivoError">Ingresa el dinero disponible</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>🏦 Límite máximo de gasto total <span class="required">*</span></label>
+                    <div class="currency-group">
+                        <select id="monedaLimite" name="monedaLimite" required>
+                            <option value="ARS">ARS $</option>
+                            <option value="USD">USD $</option>
+                        </select>
+                        <input type="number" id="limiteGasto" name="limiteGasto" placeholder="2,000,000" required>
+                    </div>
+                    <div class="error" id="limiteError">Ingresa el límite de gasto</div>
+                </div>
+            </div>
+            
+            <!-- Paso 3: Confirmación -->
+            <div class="step-content" id="step3" style="display: none;">
+                <div class="form-group">
+                    <label>🏦 Estado bancario <span class="required">*</span></label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="bancarizado" name="bancarizado">
+                        <label for="bancarizado">Tengo cuenta bancaria y recibo de sueldo</label>
+                    </div>
+                    <div class="error" id="bancarioError">Confirma tu estado bancario</div>
+                </div>
+                
+                <div id="resumen" style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">📋 Resumen de tu consulta:</h3>
+                    <div id="resumenContent"></div>
+                </div>
+            </div>
+            
+            <button type="button" id="nextBtn" class="submit-btn">Continuar →</button>
+            <button type="button" id="prevBtn" class="submit-btn" style="display: none; background: #95a5a6;">← Anterior</button>
+            <button type="submit" id="submitBtn" class="submit-btn" style="display: none;">🚀 Enviar Consulta</button>
+        </form>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+        
+        // Inicializar Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        // Configurar botón principal de Telegram
+        tg.MainButton.setText("Continuar →");
+        tg.MainButton.show();
+        
+        function updateStepIndicator() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const step = document.querySelector(`.step:nth-child(${i})`);
+                if (i < currentStep) {
+                    step.className = 'step completed';
+                } else if (i === currentStep) {
+                    step.className = 'step active';
+                } else {
+                    step.className = 'step';
+                }
+            }
+        }
+        
+        function showStep(step) {
+            // Ocultar todos los pasos
+            for (let i = 1; i <= totalSteps; i++) {
+                document.getElementById(`step${i}`).style.display = 'none';
+            }
+            
+            // Mostrar paso actual
+            document.getElementById(`step${step}`).style.display = 'block';
+            
+            // Actualizar botones
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (step === 1) {
+                nextBtn.style.display = 'block';
+                prevBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                tg.MainButton.setText("Continuar →");
+            } else if (step === totalSteps) {
+                nextBtn.style.display = 'none';
+                prevBtn.style.display = 'block';
+                submitBtn.style.display = 'block';
+                tg.MainButton.setText("🚀 Enviar Consulta");
+                updateSummary();
+            } else {
+                nextBtn.style.display = 'block';
+                prevBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+                tg.MainButton.setText("Continuar →");
+            }
+            
+            updateStepIndicator();
+        }
+        
+        function validateStep(step) {
+            let isValid = true;
+            
+            if (step === 1) {
+                const modelo = document.getElementById('modelo').value.trim();
+                const plazo = document.getElementById('plazo').value;
+                
+                if (!modelo) {
+                    showError('modeloError', 'Por favor ingresa el modelo del vehículo');
+                    isValid = false;
+                }
+                if (!plazo) {
+                    showError('plazoError', 'Por favor selecciona un plazo');
+                    isValid = false;
+                }
+            } else if (step === 2) {
+                const cuota = document.getElementById('cuotaMaxima').value;
+                const efectivo = document.getElementById('dineroEfectivo').value;
+                const limite = document.getElementById('limiteGasto').value;
+                
+                if (!cuota || cuota <= 0) {
+                    showError('cuotaError', 'Ingresa el monto máximo de cuota');
+                    isValid = false;
+                }
+                if (!efectivo || efectivo < 0) {
+                    showError('efectivoError', 'Ingresa el dinero disponible');
+                    isValid = false;
+                }
+                if (!limite || limite <= 0) {
+                    showError('limiteError', 'Ingresa el límite de gasto');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+        
+        function showError(errorId, message) {
+            const errorEl = document.getElementById(errorId);
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        function updateSummary() {
+            const modelo = document.getElementById('modelo').value;
+            const plazo = document.getElementById('plazo').value;
+            const cuota = document.getElementById('cuotaMaxima').value;
+            const monedaCuota = document.getElementById('monedaCuota').value;
+            const efectivo = document.getElementById('dineroEfectivo').value;
+            const monedaEfectivo = document.getElementById('monedaEfectivo').value;
+            const limite = document.getElementById('limiteGasto').value;
+            const monedaLimite = document.getElementById('monedaLimite').value;
+            const bancarizado = document.getElementById('bancarizado').checked;
+            
+            const summary = `
+                <p><strong>🚙 Modelo:</strong> ${modelo}</p>
+                <p><strong>⏱️ Plazo:</strong> ${plazo} meses</p>
+                <p><strong>💳 Cuota máxima:</strong> ${monedaCuota} $${parseInt(cuota).toLocaleString()}</p>
+                <p><strong>💵 Dinero efectivo:</strong> ${monedaEfectivo} $${parseInt(efectivo).toLocaleString()}</p>
+                <p><strong>🏦 Límite total:</strong> ${monedaLimite} $${parseInt(limite).toLocaleString()}</p>
+                <p><strong>🏦 Bancarizado:</strong> ${bancarizado ? '✅ Sí' : '❌ No'}</p>
+            `;
+            
+            document.getElementById('resumenContent').innerHTML = summary;
+        }
+        
+        // Event listeners
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+        
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            currentStep--;
+            showStep(currentStep);
+        });
+        
+        // Manejar botón principal de Telegram
+        tg.MainButton.onClick(() => {
+            if (currentStep < totalSteps) {
+                if (validateStep(currentStep)) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            } else {
+                submitForm();
+            }
+        });
+        
+        function submitForm() {
+            const formData = {
+                chat_id: tg.initDataUnsafe?.user?.id || 'test_user',
+                modelo_auto: document.getElementById('modelo').value,
+                plazo_deseado: parseInt(document.getElementById('plazo').value),
+                cuota_maxima: {
+                    cantidad: parseFloat(document.getElementById('cuotaMaxima').value),
+                    moneda: document.getElementById('monedaCuota').value
+                },
+                dinero_efectivo: {
+                    cantidad: parseFloat(document.getElementById('dineroEfectivo').value),
+                    moneda: document.getElementById('monedaEfectivo').value
+                },
+                limite_gasto: {
+                    cantidad: parseFloat(document.getElementById('limiteGasto').value),
+                    moneda: document.getElementById('monedaLimite').value
+                },
+                bancarizado: document.getElementById('bancarizado').checked ? 'sí' : 'no'
+            };
+            console.log('%c Datos a enviar:','color: blue; font-weight: bold;', formData);
+            
+            // Mostrar loading
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.querySelector('form').style.display = 'none';
+            tg.MainButton.hide();
+
+
+            // Enviar datos a n8n webhook
+            fetch('YOUR_N8N_WEBHOOK_URL', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingDiv').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+                
+                // Cerrar la web app después de 2 segundos
+                setTimeout(() => {
+                    tg.close();
+                }, 2000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingDiv').style.display = 'none';
+                alert('Error al enviar los datos. Por favor intenta nuevamente.');
+                document.querySelector('form').style.display = 'block';
+                tg.MainButton.show();
+            });
+        }
+        
+        // Formatear números con separadores de miles
+        ['cuotaMaxima', 'dineroEfectivo', 'limiteGasto'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d]/g, '');
+                e.target.value = value;
+            });
+        });
+        
+        // Inicializar
+        showStep(1);
+        
+        // Prevenir cierre accidental
+        tg.enableClosingConfirmation();
+    </script>
+</body>
+</html>
