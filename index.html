@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asesor Financiero Automotriz</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -254,7 +255,7 @@
                             <option value="ARS">ARS $</option>
                             <option value="USD">USD $</option>
                         </select>
-                        <input type="number" id="cuotaMaxima" name="cuotaMaxima" placeholder="100,000" required>
+                        <input type="text" id="cuotaMaxima" name="cuotaMaxima" placeholder="100.000" required>
                     </div>
                     <div class="error" id="cuotaError">Ingresa el monto máximo de cuota</div>
                 </div>
@@ -266,7 +267,7 @@
                             <option value="ARS">ARS $</option>
                             <option value="USD">USD $</option>
                         </select>
-                        <input type="number" id="dineroEfectivo" name="dineroEfectivo" placeholder="500,000" required>
+                        <input type="text" id="dineroEfectivo" name="dineroEfectivo" placeholder="500.000" required>
                     </div>
                     <div class="error" id="efectivoError">Ingresa el dinero disponible</div>
                 </div>
@@ -278,7 +279,7 @@
                             <option value="ARS">ARS $</option>
                             <option value="USD">USD $</option>
                         </select>
-                        <input type="number" id="limiteGasto" name="limiteGasto" placeholder="2,000,000" required>
+                        <input type="text" id="limiteGasto" name="limiteGasto" placeholder="2.000.000" required>
                     </div>
                     <div class="error" id="limiteError">Ingresa el límite de gasto</div>
                 </div>
@@ -383,19 +384,19 @@
                     isValid = false;
                 }
             } else if (step === 2) {
-                const cuota = document.getElementById('cuotaMaxima').value;
-                const efectivo = document.getElementById('dineroEfectivo').value;
-                const limite = document.getElementById('limiteGasto').value;
+                const cuota = cleaveInstances.cuotaMaxima.getRawValue();
+                const efectivo = cleaveInstances.dineroEfectivo.getRawValue();
+                const limite = cleaveInstances.limiteGasto.getRawValue();
                 
-                if (!cuota || cuota <= 0) {
+                if (!cuota || parseFloat(cuota) <= 0) {
                     showError('cuotaError', 'Ingresa el monto máximo de cuota');
                     isValid = false;
                 }
-                if (!efectivo || efectivo < 0) {
+                if (!efectivo || parseFloat(efectivo) < 0) {
                     showError('efectivoError', 'Ingresa el dinero disponible');
                     isValid = false;
                 }
-                if (!limite || limite <= 0) {
+                if (!limite || parseFloat(limite) <= 0) {
                     showError('limiteError', 'Ingresa el límite de gasto');
                     isValid = false;
                 }
@@ -427,9 +428,9 @@
             const summary = `
                 <p><strong>🚙 Modelo:</strong> ${modelo}</p>
                 <p><strong>⏱️ Plazo:</strong> ${plazo} meses</p>
-                <p><strong>💳 Cuota máxima:</strong> ${monedaCuota} $${parseInt(cuota).toLocaleString()}</p>
-                <p><strong>💵 Dinero efectivo:</strong> ${monedaEfectivo} $${parseInt(efectivo).toLocaleString()}</p>
-                <p><strong>🏦 Límite total:</strong> ${monedaLimite} $${parseInt(limite).toLocaleString()}</p>
+                <p><strong>💳 Cuota máxima:</strong> ${monedaCuota} $${cuota}</p>
+                <p><strong>💵 Dinero efectivo:</strong> ${monedaEfectivo} $${efectivo}</p>
+                <p><strong>🏦 Límite total:</strong> ${monedaLimite} $${limite}</p>
                 <p><strong>🏦 Bancarizado:</strong> ${bancarizado ? '✅ Sí' : '❌ No'}</p>
             `;
             
@@ -467,15 +468,15 @@
                 modelo_auto: document.getElementById('modelo').value,
                 plazo_deseado: parseInt(document.getElementById('plazo').value),
                 cuota_maxima: {
-                    cantidad: parseFloat(document.getElementById('cuotaMaxima').value),
+                    cantidad: parseFloat(cleaveInstances.cuotaMaxima.getRawValue()),
                     moneda: document.getElementById('monedaCuota').value
                 },
                 dinero_efectivo: {
-                    cantidad: parseFloat(document.getElementById('dineroEfectivo').value),
+                    cantidad: parseFloat(cleaveInstances.dineroEfectivo.getRawValue()),
                     moneda: document.getElementById('monedaEfectivo').value
                 },
                 limite_gasto: {
-                    cantidad: parseFloat(document.getElementById('limiteGasto').value),
+                    cantidad: parseFloat(cleaveInstances.limiteGasto.getRawValue()),
                     moneda: document.getElementById('monedaLimite').value
                 },
                 bancarizado: document.getElementById('bancarizado').checked ? 'sí' : 'no'
@@ -515,13 +516,28 @@
             });
         }
         
-        // Formatear números con separadores de miles
-        ['cuotaMaxima', 'dineroEfectivo', 'limiteGasto'].forEach(id => {
-            document.getElementById(id).addEventListener('input', function(e) {
-                let value = e.target.value.replace(/[^\d]/g, '');
-                e.target.value = value;
-            });
-        });
+        // Configurar Cleave.js para formateo automático de números
+        const cleaveInstances = {};
+        
+        // Configuración para inputs de dinero (sin decimales, con separadores de miles usando punto)
+        const cleaveConfig = {
+            numeral: true,
+            numeralThousandsGroupStyle: 'thousand',
+            numeralDecimalScale: 0,
+            numeralPositiveOnly: true,
+            onValueChanged: function (e) {
+                // Reemplazar comas por puntos para usar punto como separador de miles
+                const formatted = e.target.value.replace(/,/g, '.');
+                if (formatted !== e.target.value) {
+                    e.target.value = formatted;
+                }
+            }
+        };
+        
+        // Inicializar Cleave.js en cada input de dinero
+        cleaveInstances.cuotaMaxima = new Cleave('#cuotaMaxima', cleaveConfig);
+        cleaveInstances.dineroEfectivo = new Cleave('#dineroEfectivo', cleaveConfig);
+        cleaveInstances.limiteGasto = new Cleave('#limiteGasto', cleaveConfig);
         
         // Inicializar
         showStep(1);
