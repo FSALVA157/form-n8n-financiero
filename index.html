@@ -525,13 +525,10 @@
             numeralThousandsGroupStyle: 'thousand',
             numeralDecimalScale: 0,
             numeralPositiveOnly: true,
-            onValueChanged: function (e) {
-                // Reemplazar comas por puntos para usar punto como separador de miles
-                const formatted = e.target.value.replace(/,/g, '.');
-                if (formatted !== e.target.value) {
-                    e.target.value = formatted;
-                }
-            }
+            // Configuración específica para usar punto como separador de miles
+            numeralIntegerScale: 16,
+            numeralDecimalMark: ',',
+            delimiter: '.'
         };
         
         // Inicializar Cleave.js en cada input de dinero
