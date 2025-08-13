@@ -368,7 +368,7 @@
           </div>
         </div>
 
-        <!-- <button type="button" id="nextBtn" class="submit-btn">
+        <button type="button" id="nextBtn" class="submit-btn">
           Continuar →
         </button>
         <button
@@ -386,7 +386,7 @@
           style="display: none"
         >
           🚀 Enviar Consulta
-        </button> -->
+        </button>
       </form>
     </div>
 
@@ -398,9 +398,24 @@
       const tg = window.Telegram.WebApp;
       tg.expand();
 
-      // Configurar botón principal de Telegram
-      tg.MainButton.setText("Continuar →");
-      tg.MainButton.show();
+      // Detectar entorno y configurar botones apropiadamente
+      const isInTelegram = window.Telegram?.WebApp?.initData !== "";
+
+      if (isInTelegram) {
+        // En Telegram: Ocultar botones HTML y usar solo MainButton nativo
+        console.log("🔵 Ejecutándose en Telegram Web App");
+        tg.MainButton.setText("Continuar →");
+        tg.MainButton.show();
+        
+        // Ocultar botones HTML para evitar duplicación
+        document.querySelectorAll('.submit-btn').forEach(btn => {
+          btn.style.display = 'none';
+        });
+      } else {
+        // En navegador web: Ocultar MainButton y usar botones HTML
+        console.log("🌐 Ejecutándose en navegador web");
+        tg.MainButton.hide();
+      }
 
       function updateStepIndicator() {
         for (let i = 1; i <= totalSteps; i++) {
@@ -424,27 +439,40 @@
         // Mostrar paso actual
         document.getElementById(`step${step}`).style.display = "block";
 
-        // Actualizar botones
+        // Actualizar botones según el entorno
         const nextBtn = document.getElementById("nextBtn");
         const prevBtn = document.getElementById("prevBtn");
         const submitBtn = document.getElementById("submitBtn");
 
-        if (step === 1) {
-          nextBtn.style.display = "block";
-          prevBtn.style.display = "none";
-          submitBtn.style.display = "none";
-          tg.MainButton.setText("Continuar →");
-        } else if (step === totalSteps) {
-          nextBtn.style.display = "none";
-          prevBtn.style.display = "block";
-          submitBtn.style.display = "block";
-          tg.MainButton.setText("🚀 Enviar Consulta");
-          updateSummary();
+        if (isInTelegram) {
+          // En Telegram: Solo usar MainButton, mantener botones HTML ocultos
+          if (step === 1) {
+            tg.MainButton.setText("Continuar →");
+            tg.MainButton.show();
+          } else if (step === totalSteps) {
+            tg.MainButton.setText("🚀 Enviar Consulta");
+            tg.MainButton.show();
+            updateSummary();
+          } else {
+            tg.MainButton.setText("Continuar →");
+            tg.MainButton.show();
+          }
         } else {
-          nextBtn.style.display = "block";
-          prevBtn.style.display = "block";
-          submitBtn.style.display = "none";
-          tg.MainButton.setText("Continuar →");
+          // En navegador web: Usar botones HTML normales
+          if (step === 1) {
+            nextBtn.style.display = "block";
+            prevBtn.style.display = "none";
+            submitBtn.style.display = "none";
+          } else if (step === totalSteps) {
+            nextBtn.style.display = "none";
+            prevBtn.style.display = "block";
+            submitBtn.style.display = "block";
+            updateSummary();
+          } else {
+            nextBtn.style.display = "block";
+            prevBtn.style.display = "block";
+            submitBtn.style.display = "none";
+          }
         }
 
         updateStepIndicator();
@@ -524,30 +552,39 @@
         document.getElementById("resumenContent").innerHTML = summary;
       }
 
-      // Event listeners
-      document.getElementById("nextBtn").addEventListener("click", () => {
-        if (validateStep(currentStep)) {
-          currentStep++;
-          showStep(currentStep);
-        }
-      });
-
-      document.getElementById("prevBtn").addEventListener("click", () => {
-        currentStep--;
-        showStep(currentStep);
-      });
-
-      // Manejar botón principal de Telegram
-      tg.MainButton.onClick(() => {
-        if (currentStep < totalSteps) {
+      // Event listeners - Solo en navegador web
+      if (!isInTelegram) {
+        document.getElementById("nextBtn").addEventListener("click", () => {
           if (validateStep(currentStep)) {
             currentStep++;
             showStep(currentStep);
           }
-        } else {
+        });
+
+        document.getElementById("prevBtn").addEventListener("click", () => {
+          currentStep--;
+          showStep(currentStep);
+        });
+
+        document.getElementById("submitBtn").addEventListener("click", (e) => {
+          e.preventDefault();
           submitForm();
-        }
-      });
+        });
+      }
+
+      // Manejar botón principal de Telegram - Solo en Telegram
+      if (isInTelegram) {
+        tg.MainButton.onClick(() => {
+          if (currentStep < totalSteps) {
+            if (validateStep(currentStep)) {
+              currentStep++;
+              showStep(currentStep);
+            }
+          } else {
+            submitForm();
+          }
+        });
+      }
 
       function submitForm() {
         const formData = {
@@ -637,16 +674,5 @@
       // Prevenir cierre accidental
       tg.enableClosingConfirmation();
     </script>
-    
-    <!-- <script>
-      // Ejecutar después de que cargue la página
-      window.addEventListener("load", function () {
-        if (window.Telegram?.WebApp) {
-          const tg = window.Telegram.WebApp;
-          tg.expand();
-          tg.MainButton.hide(); 
-        }
-      });
-    </script>  -->
   </body>
 </html>
